@@ -29,7 +29,7 @@ const int row = 8;
 const int col = 8;
 
 // 重绘时间间隔
-const int duration = 10;
+const int duration = 11;
 
 // 选中方块坐标
 std::vector<std::pair<int, int>> selected_points;
@@ -117,14 +117,13 @@ void Widget::paintEvent(QPaintEvent *event)
         }
     }
 
-
     // 绘制宝石及地形
     for(int i=0;i<row;i++){
         for(int j=0;j<col;j++){
             int space_type = spaces[i][j]->GetType();
             int type = spaces[i][j]->GetGemstone()->GetType();
             Gemstone *g = spaces[i][j]->GetGemstone();
-            if(toBomb[i][j] == false){
+            if(toBomb[i][j] == false & g!=nullptr){
                 painter.drawPixmap(g->currentX,g->currentY,pic_fruits[type]);
 
 
@@ -141,9 +140,17 @@ void Widget::paintEvent(QPaintEvent *event)
                 }
             }
             if(space_type > 0){
-                painter.setOpacity(0.62);
+
+                if(space_type == 1)
+                    painter.setOpacity(0.50);
+                if(space_type == 2)
+                    painter.setOpacity(0.74);
+                if(space_type == 3)
+                    painter.setOpacity(0.84);
+
                 painter.drawPixmap(j_off+j*block_size,i_off+i*block_size,pic_ices[space_type-1]);
                 painter.setOpacity(1.0);
+
             }
         }
     }
@@ -258,6 +265,7 @@ void Widget::mousePressEvent(QMouseEvent *event)
                 delete g;
             }
         }
+        setDownAndFill();
         prop_refresh = false;
     }
 
@@ -365,7 +373,7 @@ void Widget::picInitial(){
 
 bool Widget::updateGemstonePositions() {
     bool falling = false;
-    const int falling_speed = 3; // 控制下落速度
+    const int falling_speed = 6; // 控制下落速度
     for (int i = 0; i < row; i++) {
         for (int j = 0; j < col; j++) {
             Gemstone* g = spaces[i][j]->GetGemstone();
@@ -394,10 +402,7 @@ void mapInitial() {
     for (int i = 0; i < row; i++) {
         for (int j = 0; j < col; j++) {
             spaces[i][j] = new Space();
-            Gemstone* gemstone = new Gemstone(6);
-            gemstone->currentX = j_off + j*block_size;
-            gemstone->currentY = i_off + i*block_size;
-            spaces[i][j]->SetGemstone(gemstone);
+            spaces[i][j]->SetGemstone(nullptr);
         }
     }
 
@@ -411,6 +416,9 @@ void mapInitial() {
     spaces[4][4]->SetType(3);
     spaces[4][5]->SetType(3);
     spaces[4][6]->SetType(3);
+
+    setDownAndFill();
+
 }
 
 
@@ -439,10 +447,10 @@ void SwapStone(int i1, int j1, int i2, int j2) {
     spaces[i2][j2]->SetGemstone(g1);
 
     if (checkMap()) {
-        std::cout << "交换后存在可消除部分" << std::endl;
+        
 
     } else {
-        std::cout << "交换后不存在可消除部分" << std::endl;
+        
         int tempx = g1->currentX;
         g1->currentX = g2->currentX;
         g2->currentX = tempx;
@@ -485,7 +493,7 @@ void performBomb() {
                 {
 
                     g->bomb_life--;
-                    qDebug()<<"宝石爆炸周期减少至"<<g->bomb_life;
+
                 }else{
 
                     delete spaces[i][j]->GetGemstone();
@@ -550,12 +558,10 @@ void setDownAndFill() {
         for(int j=0;j<col;j++){
             if (spaces[i][j]->GetGemstone() == nullptr) {
                 Gemstone *g = new Gemstone(6);
-                qDebug()<<"计算"<<j_off<<"+"<<j*block_size<<"  "<<i_off<<"+"<<i<<"-"<<lack_num[j];
+
                 g->currentX = j_off + j*block_size;
                 g->currentY = i_off + (i-lack_num[j])*block_size;
 
-                qDebug()<<g->currentX<<","<<g->currentY;
-                qDebug()<<i<<","<<j<<"处刷新宝石，初始位置为"<<g->currentX<<","<<g->currentY;
                 spaces[i][j]->SetGemstone(g);
             }
         }
